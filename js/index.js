@@ -13,7 +13,7 @@ for (let i = 0; i < placementTilesData.length; i += 20) {
     placementTilesData2D.push(placementTilesData.slice(i, i + 20))
 }
 
-const placementTiles = []
+let placementTiles = []
 placementTilesData2D.forEach((row, y) => {
     row.forEach((symbol, x) => {
         if (symbol === 14) {
@@ -28,38 +28,71 @@ image.onload = () => {
     animate()
 
 }
-image.src = 'img/gameMap.png'
+
+let images = ['img/gameMap.png', 'img/gameMap2.png']
+image.src = images[0]
+// image.src = 'img/gameMap.png'
 
 
 
 const enemies = []
 
-
 function spawnEnemies(spawnCount) {
     for (let i = 1; i < spawnCount + 1; i++) {
         const xOffset = i * 150
-        enemies.push(new Enemy({
-            position: { x: waypoints[0].x - xOffset, y: waypoints[0].y }
-        }))
+        if (wave % 5 == 0) {
+            enemies.push(new Enemy1({
+                position: { x: waypoints[0].x - xOffset, y: waypoints[0].y }
+            }))
+        } else {
+            enemies.push(new Enemy({
+                position: { x: waypoints[0].x - xOffset, y: waypoints[0].y }
+            }))
+        }
     }
 }
 
 
+let wave = 1
 let hearts = 10
 let activeTile = undefined
 const buildings = []
-let enemeyCount = 3
+let enemyCount = 3
 let coins = 150
 const explosions = []
-spawnEnemies(enemeyCount);
+spawnEnemies(enemyCount);
 
+let animationId
 
-
-
+function resetGame() {
+    document.querySelector('#gameOver').style.display = 'none';
+    wave = 1;
+    hearts = 10;
+    activeTile = undefined;
+    placementTiles = [];
+    placementTilesData2D.forEach((row, y) => {
+        row.forEach((symbol, x) => {
+            if (symbol === 14) {
+                // add building placement tile here
+                placementTiles.push(new PlacementTile({ position: { x: x * 64, y: y * 64 } }))
+            }
+        })
+    });
+    buildings.length = 0;
+    enemyCount = 3;
+    coins = 150;
+    enemies.length = 0;
+    explosions.length = 0;
+    spawnEnemies(enemyCount);
+    document.querySelector('#wave').innerHTML = wave;
+    document.querySelector('#hearts').innerHTML = hearts;
+    document.querySelector('#enemies').innerHTML = enemyCount;
+    document.querySelector('#coins').innerHTML = coins;
+}
 
 function animate() {
-    const animationId = requestAnimationFrame(animate)
 
+    const animationId = requestAnimationFrame(animate)
     c.drawImage(image, 0, 0)
 
     for (let i = enemies.length - 1; i >= 0; i--) {
@@ -72,28 +105,30 @@ function animate() {
             document.querySelector('#hearts').innerHTML = hearts
 
             if (hearts === 0) {
-                cancelAnimationFrame(animationId)
                 document.querySelector('#gameOver').style.display = 'flex'
             }
         }
     }
-    
+
 
     for (let i = explosions.length - 1; i >= 0; i--) {
         const explosion = explosions[i]
-        console.log('current: ' + explosion.frames.current)
-        console.log('max: ' + explosion.frames.max)
+        // console.log('current: ' + explosion.frames.current)
+        // console.log('max: ' + explosion.frames.max)
         if (explosion.frames.current >= explosion.frames.max - 1) {
-            explosions.splice(i,1)
+            explosions.splice(i, 1)
         }
         explosion.draw()
         explosion.update()
     }
 
     // tracking total number of enemies
-    if (enemies.length === 0) {
-        enemeyCount += 2
-        spawnEnemies(enemeyCount)
+    if (enemies.length === 0 && hearts > 0) {
+        enemyCount += 2
+        wave += 1
+        spawnEnemies(enemyCount)
+        document.querySelector('#wave').innerHTML = wave
+        document.querySelector('#enemies').innerHTML = enemyCount
     }
 
     placementTiles.forEach((tile) => {
@@ -117,10 +152,10 @@ function animate() {
             const xDifference = projectile.enemy.center.x - projectile.position.x
             const yDifference = projectile.enemy.center.y - projectile.position.y
             const distance = Math.hypot(xDifference, yDifference)
-            
+
             // this is when a projectile hits an enemy
             if (distance < projectile.enemy.radius + projectile.radius) {
-                projectile.enemy.health -= 20
+                projectile.enemy.health -= 20 * projectile.power
                 if (projectile.enemy.health <= 0) {
                     const enemyIndex = enemies.findIndex((enemy) => {
                         return projectile.enemy === enemy
@@ -133,7 +168,7 @@ function animate() {
                 }
 
                 explosions.push(new Sprite(
-                    { position: {x: projectile.position.x, y: projectile.position.y}, imageSrc: './sprites/explosion.png', frames: { max: 4}, offset: { x: 0, y: 0 } }))
+                    { position: { x: projectile.position.x, y: projectile.position.y }, imageSrc: './sprites/explosion.png', frames: { max: 4 }, offset: { x: 0, y: 0 } }))
                 building.projectiles.splice(i, 1)
 
             }
@@ -146,16 +181,52 @@ const mouse = {
     y: undefined
 }
 
+let buildingType = 'building'
+
+document.addEventListener('keydown', event => {
+    if (event.code === 'Space') {
+        resetGame();
+    }
+});
+
+document.addEventListener('keydown', event => {
+    if (event.key === 'a') {
+        buildingType = 'building'
+    } else if (event.key === 's') {
+        buildingType = 'building1'
+    } else if (event.key === 'd') {
+        buildingType = 'building2'
+    }
+});
+
 canvas.addEventListener('click', (event) => {
     if (activeTile && !activeTile.isOccupied && coins - 50 >= 0) {
         coins -= 50
         document.querySelector('#coins').innerHTML = coins
-        buildings.push(new Building({
-            position: {
-                x: activeTile.position.x,
-                y: activeTile.position.y
-            }
-        }))
+        console.log(buildingType)
+        if (buildingType === 'building') {
+
+            buildings.push(new Building({
+                position: {
+                    x: activeTile.position.x,
+                    y: activeTile.position.y
+                }
+            }))
+        } else if (buildingType === 'building1') {
+            buildings.push(new Building1({
+                position: {
+                    x: activeTile.position.x,
+                    y: activeTile.position.y
+                }
+            }))
+        } else if (buildingType === 'building2') {
+            buildings.push(new Building2({
+                position: {
+                    x: activeTile.position.x,
+                    y: activeTile.position.y
+                }
+            }))
+        }
         activeTile.isOccupied = true
         buildings.sort((a, b) => {
             return a.position.y - b.position.y
