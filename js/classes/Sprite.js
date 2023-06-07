@@ -1,5 +1,5 @@
 class Sprite {
-    constructor({ position = { x: 0, y: 0 }, imageSrc, frames = { max: 1 }, offset = { x: 0, y: 0 } }) {
+    constructor({ position = { x: 0, y: 0 }, imageSrc, frames = { max: 1, hold: 3 }, offset = { x: 0, y: 0 }, scale = 1 }) {
         this.position = position
         this.image = new Image()
         this.image.src = imageSrc
@@ -7,9 +7,10 @@ class Sprite {
             max: frames.max,
             current: 0,
             elapsed: 0,
-            hold: 3
+            hold: frames.hold
         }
         this.offset = offset
+        this.scale = scale
     }
 
     draw() {
@@ -23,7 +24,7 @@ class Sprite {
             height: this.image.height
         }
 
-        c.drawImage(this.image, crop.position.x, crop.position.y, crop.width, crop.height, this.position.x + this.offset.x, this.position.y + this.offset.y, crop.width, crop.height)
+        c.drawImage(this.image, crop.position.x, crop.position.y, crop.width, crop.height, this.position.x + this.offset.x, this.position.y + this.offset.y, crop.width * this.scale, crop.height * this.scale)
     }
     update() {
         // responsible for animation

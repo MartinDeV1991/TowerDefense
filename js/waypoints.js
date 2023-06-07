@@ -1,4 +1,4 @@
-const waypoints = [
+const waypoints1 = [
     {
         "x": -66,
         "y": 482
@@ -41,7 +41,7 @@ const waypoints = [
     }
 ]
 
-const waypoints1 = [
+const waypoints2 = [
     {
      "x":-73.6842105263158,
      "y":480.263157894737
@@ -50,3 +50,8 @@ const waypoints1 = [
      "x":1348.68421052632,
      "y":485.526315789474
     }]
+
+const waypointsAll = [
+    waypoints1,
+    waypoints2
+]
